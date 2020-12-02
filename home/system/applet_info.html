@@ -1,0 +1,150 @@
+<!-- 新闻管理系统微信小程序参考学习Demo（后台管理面板）-->
+<!-- Author : 饼干 -->
+<!-- QQ NUM : 609451870 -->
+<!-- Email  : 609451870@qq.com -->
+<!-- Date   : 2020/12/2 -->
+<!-- WEB前端基于经典模块化前端框架(LayUi) -->
+<!-- 如需商用请购买LayUi正式版(https://www.layui.com/) -->
+<!-- 免责声明 ：本程序提供的功能以及涉及到的公开与互联网的代码段或模板仅供参考和学习，作者不对其中所涉及的内容提供任何担保-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>新闻管理系统__微信小程序__参考学习Demo__QQ:609451870</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">小程序设置</div>
+                <div class="layui-card-body" pad15>
+                    <form id="systemForm" action="" method="post">
+                        <div class="layui-form" wid100 lay-filter="">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">导航条名称</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="applet_navigation_bar_title" id="applet_navigation_bar_title" class="layui-input" id="site_name">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">导航条颜色</label>
+                                <div class="layui-input-inline" style="width: 120px;">
+                                    <input type="text" value="" placeholder="请选择颜色" class="layui-input" name="applet_navigation_bar_color" id="applet_navigation_bar_color">
+                                </div>
+                                <div class="layui-inline" style="left: -11px;">
+                                    <div id="test-form"></div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">用户页面颜色</label>
+                                <div class="layui-input-inline" style="width: 120px;">
+                                    <input type="text" value="" name="applet_user_navigation_bar_color" placeholder="请选择颜色" class="layui-input" id="applet_user_navigation_bar_color">
+                                </div>
+                                <div class="layui-inline" style="left: -11px;">
+                                    <div id="test-form1"></div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <button class="layui-btn" lay-submit lay-filter="appletInfoEdit" >确认保存</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../../layuiadmin/layui/layui.js"></script>
+<script>
+    layui.config({
+        base: '../../layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: 'lib/index' //主入口模块
+    }).use([ 'index', 'form','element','colorpicker'],function() {
+        var $ = layui.$
+            ,form = layui.form
+            ,colorpicker = layui.colorpicker;
+        var index = layer.load(1); //加载中
+        colorpicker.render({
+            elem: '#test-form'
+            ,color: '#1c97f5'
+            ,done: function(color){
+                $('#applet_navigation_bar_color').val(color);
+            }
+        });
+        colorpicker.render({
+            elem: '#test-form1'
+            ,color: '#1c97f5'
+            ,done: function(color){
+                $('#applet_user_navigation_bar_color').val(color);
+            }
+        });
+        //ajax加载后端的数据
+        $.ajax({
+            type: 'POST',
+            url: domain + "applet_info",
+            dataType:'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            cache:false,
+            crossDomain: true,
+            success : function(data) {
+                if(data.code == 200){
+                    layer.close(index); //关闭加载
+                    $("#applet_navigation_bar_title").val(data.data.applet_navigation_bar_title);
+                    $("#applet_navigation_bar_color").val(data.data.applet_navigation_bar_color);
+                    $("#applet_user_navigation_bar_color").val(data.data.applet_user_navigation_bar_color);
+                    layui.form.render();
+                }
+            },
+            error: function(data){
+                console.log(data);
+                layer.msg('数据异常，操作失败！');
+            },
+        });
+        //保存
+        form.on('submit(appletInfoEdit)', function(data){
+            //获取请求数据
+            //使用ajax发送请求
+            $.ajax({
+                type: 'POST',
+                url: domain + "applet_edit",
+                dataType:'json',
+                data:data.field,
+                xhrFields: {
+                    withCredentials: true
+                },
+                cache:false,
+                crossDomain: true,
+                success:function(data){
+                    if(data.code == 200){
+                        layer.msg(data.msg, {icon: 1});
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 500);
+                    }else{
+                        layer.msg(data.msg, {icon: 2});
+                    }
+                },
+                error: function(data){
+                    console.log(data);
+                    layer.msg('数据异常，操作失败！');
+                },
+            });
+            return false;  //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+        });
+        //结束
+    });
+</script>
+</body>
+</html>

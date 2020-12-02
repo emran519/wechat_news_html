@@ -1,0 +1,247 @@
+<!-- 新闻管理系统微信小程序参考学习Demo（后台管理面板）-->
+<!-- Author : 饼干 -->
+<!-- QQ NUM : 609451870 -->
+<!-- Email  : 609451870@qq.com -->
+<!-- Date   : 2020/12/2 -->
+<!-- WEB前端基于经典模块化前端框架(LayUi) -->
+<!-- 如需商用请购买LayUi正式版(https://www.layui.com/) -->
+<!-- 免责声明 ：本程序提供的功能以及涉及到的公开与互联网的代码段或模板仅供参考和学习，作者不对其中所涉及的内容提供任何担保-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>新闻管理系统__微信小程序__参考学习Demo__QQ:609451870</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Access-Control-Allow-Origin">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <style type="text/css">
+        .layui-table-cell{
+            text-align: center;
+            height: auto;
+            white-space: normal;
+        }
+        .layui-table-cell, .layui-table-tool-panel li{
+            overflow:visible !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+            <div class="layui-form-item">
+                <div class="layui-inline"  id="is_val" style="display: none">
+                    <label class="layui-form-label">键值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="vValue"  placeholder="请输入" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">搜索选项</label>
+                    <div class="layui-input-block">
+                        <select name="kKey"  id="kKey" lay-filter="thisSearch">
+                            <option value="thisNoSettle" selected>请选择...</option>
+                            <option value="user_id">ID</option>
+                            <option value="user_nickname">用户名</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button class="layui-btn layuiadmin-btn-useradmin" lay-submit lay-filter="LAY-user-front-search">
+                        <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-card-body">
+
+            <table id="jtdc-appletUser" lay-filter="jtdc-appletUser"></table>
+            <script type="text/html" id="table-applet-user">
+                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+            </script>
+            <!--这个是选择框tpl-->
+            <script type="text/html" id="show_tpl">
+                <input type="checkbox"  user_id="{{d.id}}"  lay-skin="switch" lay-text="激活|封禁"  lay-filter="thisStatus" {{d.status==1?'checked':''}} >
+            </script>
+        </div>
+    </div>
+</div>
+
+<script src="../../layuiadmin/layui/layui.js"></script>
+<script src="../../layuiadmin/jquery.min.js"></script>
+<script>
+    //layer组件
+    layui.config({
+        base: '../../layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: '/lib/index' //主入口模块
+    }).use(['form','index', 'useradmin', 'table', 'jquery'], function(){
+        var $ = layui.$
+            ,form = layui.form
+            ,table = layui.table;
+        //
+        form.on('select(thisSearch)', function(data){
+            var val=data.value;
+            var inputs  = $("#is_val");
+            if(val=='thisNoSettle'){
+                $(inputs).hide();
+            }else{
+                $(inputs).show();
+            }
+        });
+        //Ajax设置
+        $.ajaxSetup({
+            type: 'POST',
+            dataType : "json",
+            contentType : "application/json",
+            cache:false,
+            crossDomain: true,
+            // 发送cookie
+            xhrFields: {
+                withCredentials: true
+            },
+        });
+        //table事件开始
+        table.render({
+            elem: '#jtdc-appletUser',
+            url:  domain +  "user_list",
+            cols: [
+                [
+                    {field: 'id', title: 'ID', sort: true },
+                    {field: 'user_headimgurl', title: '头像', align:'center', templet: function(d){
+                            if(d.user_headimgurl){return '<div><img src="'+d.user_headimgurl+'" onclick="showBigImage(this)"></div>';
+                            }else {
+                                return '暂无';
+                            }
+                        }},
+                    {field: 'user_nickname', title: '用户名' },
+                    {field: 'user_sex', title: '性别',   templet: function(d){
+                            if(d.user_sex == '1'){
+                                return '男';
+                            }else if(d.user_sex == '2'){
+                                return '女';
+                            }else{
+                                return '保密';
+                            }
+                        }},
+                    {field: 'add_time', title: '注册时间', sort: true },
+                    {title: '操作', width: 150, align: 'center', fixed: 'right', toolbar: '#table-applet-user'}
+                ]
+            ],
+            page: true,
+            limit: 30,
+            height: 'full-220',
+            text: '对不起，加载出现异常！',
+            done: function (res) {
+                if (res.code != 200) {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }
+        });
+        //table事件结束
+        //搜索事件
+        //监听搜索
+        form.on('submit(LAY-user-front-search)', function(data){
+            var kKey = $("#kKey").val();
+            var vValue=$("input[name='vValue']").val();
+            //执行重载
+            table.reload('jtdc-appletUser', {
+                url:  domain +  "web/login/user/appletUserList"
+                ,request: {
+                    pageName: 'page' //页码的参数名称，默认：page
+                    ,limitName: 'pageSize' //每页数据量的参数名，默认：limit
+                }
+                ,where: {vValue:vValue,kKey:kKey}
+                ,page: {
+                    curr: 1
+                }
+            });
+        });
+        //监听switch（用户状态）事件
+        form.on('switch(thisStatus)', function(data){
+            var user_id = data.elem.attributes['user_id'].nodeValue;
+            var thisStatus =this.checked ? '1' : '0';
+            //用户状态更新
+            $.ajax({
+                type: 'GET',
+                headers: {"Authorization":"webLogin " + layui.data(layui.setter.tableName)['access_token']},
+                url: domain + "/web/edit/appletUserStatus",
+                data: {"user_id":user_id,"status":thisStatus},
+                dataType : 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                success : function(data) {
+                    if(data.code == 1){
+                        layer.msg(data.msg, {icon: 1});
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 500);
+                    }else if(data.code == -7){
+                        layer.msg(data.msg, {icon: 2});
+                        window.setTimeout(function () {
+                            top.location = '../../login.html';
+                        }, 1000);
+                    }else{
+                        layer.msg(data.msg, {icon: 2});
+                    }
+                },
+                error: function(data){
+                    console.log(data);
+                    layer.msg('数据异常，操作失败！');
+                },
+            });
+        });
+        //监听switch（用户状态）事件 结束
+        //编辑，删除，发布申请
+        //监听行工具事件
+        table.on('tool(jtdc-appletUser)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'edit'){
+                parent.layer.open({
+                    type: 2,
+                    title: '编辑脚本定义',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['50%', '75%'],
+                    content: './iframe/applet/userListEdit.html?id='+data.id,
+                    success: function(layero, index){
+                        //注意这里的#sid是iframe页面中的一个标签id
+                        var user_id = $("#id", layero.find("iframe")[0].contentWindow.document);
+                        var nickname = $("#nickname", layero.find("iframe")[0].contentWindow.document);
+                        var gender = $("#gender", layero.find("iframe")[0].contentWindow.document);
+                        var status = $("#status", layero.find("iframe")[0].contentWindow.document);
+                        user_id.attr("value", data.id );
+                        nickname.attr("value", data.nickname );
+                        gender.find("option[value='"+data.gender+"']").attr("selected",true);
+                        if(data.status==1){
+                            status.attr('checked', true);
+                        }
+                    },
+                });
+            }
+
+        });
+    });
+    /**
+     * @param e 图片对象
+     */
+    function showBigImage(e) {
+        layer.open({
+            type: 1,
+            title: false,
+            closeBtn: 0,
+            shadeClose: true, //点击阴影关闭
+            area: [$(e).width + 'px', $(e).height + 'px'], //宽高
+            content: "<img src=" + $(e).attr('src') + " style='width:300px;height:300px' />"
+        });
+    }
+</script>
+</body>
+</html>

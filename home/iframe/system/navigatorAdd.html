@@ -1,0 +1,168 @@
+<!-- 新闻管理系统微信小程序参考学习Demo（后台管理面板）-->
+<!-- Author : 饼干 -->
+<!-- QQ NUM : 609451870 -->
+<!-- Email  : 609451870@qq.com -->
+<!-- Date   : 2020/12/2 -->
+<!-- WEB前端基于经典模块化前端框架(LayUi) -->
+<!-- 如需商用请购买LayUi正式版(https://www.layui.com/) -->
+<!-- 免责声明 ：本程序提供的功能以及涉及到的公开与互联网的代码段或模板仅供参考和学习，作者不对其中所涉及的内容提供任何担保-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>新闻管理系统__微信小程序__参考学习Demo__QQ:609451870</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../../layuiadmin/style/admin.css" media="all">
+    <style>
+        .layui-upload-img { width: 90px; height: 90px; margin: 0; }
+        .pic-more { width:100%; left; margin: 10px 0px 0px 0px;}
+        .pic-more li { width:90px; float: left; margin-right: 5px;}
+        .pic-more li .layui-input { display: initial; }
+        .pic-more li a { position: absolute; top: 0; display: block; }
+        .pic-more li a i { font-size: 24px; background-color: #008800; }
+        #slide-pc-priview .item_img img{ width: 90px; height: 90px;}
+        #slide-pc-priview li{position: relative;}
+        #slide-pc-priview li .operate{ color: #000; display: none;}
+        #slide-pc-priview li .toleft{ position: absolute;top: 40px; left: 1px; cursor:pointer;}
+        #slide-pc-priview li .toright{ position: absolute;top: 40px; right: 1px;cursor:pointer;}
+        #slide-pc-priview li .close{position: absolute;top: 5px; right: 5px;cursor:pointer;}
+        #slide-pc-priview li:hover .operate{ display: block;}
+    </style>
+
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+
+            <div class="layui-card-body" pad15>
+                <form id="systemForm" action="" method="post">
+                    <div class="layui-form" wid100 lay-filter="">
+                        <div class="layui-form-item" pane>
+                            <label class="layui-form-label">轮播图</label>
+                            <div class="layui-input-block">
+                                <button type="button" class="layui-btn demoMore"  lay-data="{ data: '1'}">上传图片</button>
+                            </div>
+                            <div class="layui-input-block">
+                                <input type="hidden" value="" id="image_src" name="image_src">
+                                <img class="layui-upload-img" id="news-logo" name="news-logo" style="width: 175px;">
+                                <p id="test-upload-demoText"></p>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">新闻ID</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="news_id" lay-verify="text" class="layui-input" placeholder="如果无需跳转到文章可以留空">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-block">
+                                <select name="status"  id="status" >
+                                    <option value="1">展示</option>
+                                    <option value="2">不展示</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <div class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="addNavigator" >确认添加</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../../../layuiadmin/layui/layui.js"></script>
+<script>
+    layui.config({
+        base: '../../../layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: 'lib/index' //主入口模块
+    }).use([ 'index', 'form','jquery','upload'],function() {
+        var $ = layui.$
+            ,form = layui.form
+            ,upload = layui.upload;
+        //Ajax设置
+        $.ajaxSetup({
+            type: 'POST',
+            dataType : "json",
+            cache:false,
+            crossDomain: true,
+            // 发送cookie
+            xhrFields: {
+                withCredentials: true
+            },
+        });
+        //轮播图上传
+        upload.render({
+            elem: '.demoMore'
+            ,accept: 'file'
+            ,url: domain + 'upload_photo'
+            ,exts: 'jpg|png|jpeg|gif'
+            ,before: function(obj){
+                var data = {};
+                data.type = 2;
+                this.data=data;
+                layer.msg('图片上传中...', {
+                    icon: 16,
+                    shade: 0.01,
+                    time: 0
+                })
+                //预读本地文件示例，不支持ie8
+                obj.preview(function(index, file, result){
+                    $('#news-logo').attr('src', result); //图片链接（base64）
+                });
+            },
+            done: function(res){
+                //如果上传失败
+                if(res.code==200){
+                    $("#image_src").attr("value",res.data.src);
+                    layer.msg(res.msg, {icon: 1});
+                }else{
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }
+            ,error: function(){
+                //演示失败状态，并实现重传
+                var demoText = $('#test-upload-demoText');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-mini demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function(){
+                    uploadInst.upload();
+                });
+            }
+        });
+        //button
+        form.on('submit(addNavigator)', function(data){
+            //使用ajax发送请求
+            $.ajax({
+                url: domain + "rotation_add",
+                data:data.field,
+                success:function(data){
+                    if(data.code == 200){
+                        layer.msg(data.msg, {icon: 1});
+                        window.setTimeout(function () {
+                            var index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+                        }, 1000);
+                    }else{
+                        layer.msg(data.msg, {icon: 2});
+                    }
+                },
+                error: function(data){
+                    console.log(data);
+                    layer.msg('数据异常，操作失败！');
+                },
+            });
+            return false;  //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+        });
+    });
+</script>
+</body>
+</html>

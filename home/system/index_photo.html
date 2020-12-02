@@ -1,0 +1,199 @@
+<!-- 新闻管理系统微信小程序参考学习Demo（后台管理面板）-->
+<!-- Author : 饼干 -->
+<!-- QQ NUM : 609451870 -->
+<!-- Email  : 609451870@qq.com -->
+<!-- Date   : 2020/12/2 -->
+<!-- WEB前端基于经典模块化前端框架(LayUi) -->
+<!-- 如需商用请购买LayUi正式版(https://www.layui.com/) -->
+<!-- 免责声明 ：本程序提供的功能以及涉及到的公开与互联网的代码段或模板仅供参考和学习，作者不对其中所涉及的内容提供任何担保-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>新闻管理系统__微信小程序__参考学习Demo__QQ:609451870</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Access-Control-Allow-Origin">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <style type="text/css">
+        .layui-table-cell{
+            text-align: center;
+            height: auto;
+            white-space: normal;
+        }
+        .layui-table-cell, .layui-table-tool-panel li{
+            overflow:visible !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <div style="padding-bottom: 10px;">
+                <button class="layui-btn layuiadmin-btn-useradmin" data-type="add">添加</button>
+            </div>
+
+            <table id="LAY-items-manage" lay-filter="LAY-items-manage"></table>
+            <script type="text/html" id="table-applet-user">
+                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+                <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-edit"></i>删除</a>
+            </script>
+            <!--这个是选择框tpl-->
+        </div>
+    </div>
+</div>
+
+<script src="../../layuiadmin/layui/layui.js"></script>
+<script src="../../layuiadmin/jquery.min.js"></script>
+
+<script>
+    //layer组件
+    layui.config({
+        base: '../../layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: '/lib/index' //主入口模块
+    }).use(['form','index', 'useradmin', 'table', 'jquery', 'element'], function(){
+        var $ = layui.$
+            ,form = layui.form
+            ,table = layui.table
+            ,element = layui.element;
+        //Ajax设置
+        $.ajaxSetup({
+            type: 'POST',
+            dataType : "json",
+            cache:false,
+            crossDomain: true,
+            // 发送cookie
+            xhrFields: {
+                withCredentials: true
+            },
+        });
+        //table事件开始
+        table.render({
+            elem: '#LAY-items-manage',
+            url:  domain +  "rotation_list",
+            cols: [
+                [
+                    {field: 'id',  title: 'ID', sort: true,width: 80 },
+                    {field: 'image_src', title: '轮播图', align:'center',width:250, templet:'<div><img src="{{d.image_src}}" onclick="showBigImage(this)"></div>'},
+                    {field: 'article_id', title: '文章ID',width: 80,   templet: function(d){
+                            if(d.article_id){
+                                return '<a style="color: #ffaa00">'+ d.article_id +'</a>';
+                            }else{
+                                return '<a style="color: #ff0000">未设置</a>';
+                            }
+                        }},
+                    {field: 'status', title: '状态',width: 80,   templet: function(d){
+                            if(d.status == '1'){
+                                return '<a style="color: #ffaa00">展示</a>';
+                            }else{
+                                return '<a style="color: #ff0000">不展示</a>';
+                            }
+                        }},
+                    {field: 'add_time', title: '添加时间' },
+                    {title: '操作', width: 180, align: 'center', fixed: 'right', toolbar: '#table-applet-user'}
+                ]
+            ],
+            id:'itemList',
+            page: true,
+            limit: 30,
+            height: 'full-220',
+            text: '对不起，加载出现异常！',
+            done: function (res) {
+                if (res.code != 200) {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }
+        });
+        //table事件结束
+        //事件
+        var active = {
+            add: function(){
+                parent.layer.open({
+                    type: 2,
+                    title: '添加轮播图',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['65%', '75%'],
+                    content: './home/iframe/system/navigatorAdd.html',
+                    end:function(){
+                        window.location.reload();
+                    }
+                });
+            }
+        };
+        $('.layui-btn.layuiadmin-btn-useradmin').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+        //编辑，删除，发布申请
+        //监听行工具事件
+        table.on('tool(LAY-items-manage)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'edit'){
+                parent.layer.open({
+                    type: 2,
+                    title: '编辑新闻内容',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['75%', '75%'],
+                    content: './home/iframe/system/navigatorEdit.html',
+                    success:function(layero,index){
+                        var navigator_id = $("#navigator_id", layero.find("iframe")[0].contentWindow.document);
+                        var article_id = $("#article_id", layero.find("iframe")[0].contentWindow.document);
+                        var status = $("#status", layero.find("iframe")[0].contentWindow.document);
+                        var news_logo = $("#news_logo", layero.find("iframe")[0].contentWindow.document);
+                        var image_src = $("#image_src", layero.find("iframe")[0].contentWindow.document);
+                        navigator_id.attr("value", data.id);
+                        news_logo.attr('src', data.image_src);
+                        image_src.attr("value", data.image_src);
+                        article_id.attr("value", data.article_id);
+                        status.find("option[value='"+data.status+"']").attr("selected",true);
+                        layui.form.render();
+                    },end:function(){
+                        location.reload();
+                    }
+                });
+            }else if(obj.event === "del"){
+                layer.confirm('确定删除?', function(index){
+                    $.ajax({
+                        url: domain + "rotation_del",
+                        data:{navigator_id:data.id},
+                        success:function(data){
+                            if(data.code == 200 ){
+                                layer.msg(data.msg, {icon: 1});
+                                window.setTimeout(function () {
+                                    window.location.reload();
+                                }, 500);
+                            }else{
+                                layer.msg(data.msg, {icon: 2});
+                            }
+                        },
+                        error: function(data){
+                            layer.msg('数据异常，操作失败！');
+                        },
+                    });
+                });
+            }
+        });
+    });
+    /**
+     * @param e 图片对象
+     */
+    function showBigImage(e) {
+        layer.open({
+            type: 1,
+            title: false,
+            closeBtn: 0,
+            shadeClose: true, //点击阴影关闭
+            area: [$(e).width + 'px', $(e).height + 'px'], //宽高
+            content: "<img src=" + $(e).attr('src') + " style='width:720px;height:405px' />"
+        });
+    }
+</script>
+</body>
+</html>

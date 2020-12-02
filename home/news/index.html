@@ -1,0 +1,241 @@
+<!-- 新闻管理系统微信小程序参考学习Demo（后台管理面板）-->
+<!-- Author : 饼干 -->
+<!-- QQ NUM : 609451870 -->
+<!-- Email  : 609451870@qq.com -->
+<!-- Date   : 2020/12/2 -->
+<!-- WEB前端基于经典模块化前端框架(LayUi) -->
+<!-- 如需商用请购买LayUi正式版(https://www.layui.com/) -->
+<!-- 免责声明 ：本程序提供的功能以及涉及到的公开与互联网的代码段或模板仅供参考和学习，作者不对其中所涉及的内容提供任何担保-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>新闻管理系统__微信小程序__参考学习Demo__QQ:609451870</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Access-Control-Allow-Origin">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <style type="text/css">
+        .layui-table-cell{
+            text-align: center;
+            height: auto;
+            white-space: normal;
+        }
+        .layui-table-cell, .layui-table-tool-panel li{
+            overflow:visible !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+            <div class="layui-form-item">
+                <div class="layui-inline"  id="is_val" style="display: none">
+                    <label class="layui-form-label">键值</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="vValue"  placeholder="请输入" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">搜索选项</label>
+                    <div class="layui-input-block">
+                        <select name="kKey"  lay-filter="thisSearch">
+                            <option value="thisNoSettle" selected>请选择...</option>
+                            <option value="id">ID</option>
+                            <option value="item_name">标题</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button class="layui-btn layuiadmin-btn-useradmin" lay-submit lay-filter="LAY-user-front-search">
+                        <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-card-body">
+            <div style="padding-bottom: 10px;">
+                <button class="layui-btn layuiadmin-btn-useradmin" data-type="add">添加</button>
+            </div>
+
+            <table id="LAY-items-manage" lay-filter="LAY-items-manage"></table>
+            <script type="text/html" id="table-applet-user">
+                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+                <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-edit"></i>删除</a>
+            </script>
+            <!--这个是选择框tpl-->
+        </div>
+    </div>
+</div>
+
+<script src="../../layuiadmin/layui/layui.js"></script>
+<script src="../../layuiadmin/jquery.min.js"></script>
+
+<script>
+    //layer组件
+    layui.config({
+        base: '../../layuiadmin/' //静态资源所在路径
+    }).extend({
+        index: '/lib/index' //主入口模块
+    }).use(['form','index', 'table', 'jquery', 'element'], function(){
+        var $ = layui.$
+            ,form = layui.form
+            ,table = layui.table
+            ,element = layui.element;
+        //
+        form.on('select(thisSearch)', function(data){
+            var val=data.value;
+            var inputs  = $("#is_val");
+            if(val=='thisNoSettle'){
+                $(inputs).hide();
+            }else{
+                $(inputs).show();
+            }
+        });
+        $(document).click(function (e) {
+            $('.layui-nav-child').hide();
+        });
+        //Ajax设置
+        $.ajaxSetup({
+            type: 'POST',
+            dataType : "json",
+            cache:false,
+            crossDomain: true,
+            // 发送cookie
+            xhrFields: {
+                withCredentials: true
+            },
+        });
+        //table事件开始
+        table.render({
+            elem: '#LAY-items-manage',
+            url:  domain +  "article_list",
+            cols: [
+                [
+                    {field: 'id',  title: 'ID', sort: true,width: 80 },
+                    {field: 'title_img', title: '缩略图', align:'center',width:150, templet:'<div><img src="{{d.title_img}}" onclick="showBigImage(this)"></div>'},
+                    {field: 'title', title: '新闻标题' },
+                    {field: 'status', title: '状态',width: 80,   templet: function(d){
+                            if(d.status == '1'){
+                                return '<a style="color: #ffaa00">展示</a>';
+                            }else{
+                                return '<a style="color: #ff0000">不展示</a>';
+                            }
+                        }},
+                    {field: 'add_time', title: '添加时间' },
+                    {title: '操作', width: 180, align: 'center', fixed: 'right', toolbar: '#table-applet-user'}
+                ]
+            ],
+            id:'itemList',
+            page: true,
+            limit: 30,
+            height: 'full-220',
+            text: '对不起，加载出现异常！',
+            done: function (res) {
+                if (res.code != 200) {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }
+        });
+        //table事件结束
+        //搜索事件
+        //监听搜索
+        form.on('submit(LAY-user-front-search)', function(data){
+            //执行重载
+            table.reload('itemList', {
+                url:  domain +  "web/login/shop/itemList"
+                ,request: {
+                    pageName: 'page' //页码的参数名称，默认：page
+                    ,limitName: 'pageSize' //每页数据量的参数名，默认：limit
+                }
+                ,where: {
+                    query : data.field
+                }
+                ,page: {
+                    curr: 1
+                }
+            });
+        });
+        //事件
+        var active = {
+            add: function(){
+                parent.layer.open({
+                    type: 2,
+                    title: '添加新闻',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['65%', '75%'],
+                    content: './home/iframe/news/newsAdd.html',
+                    end:function(){
+                        window.location.reload();
+                    }
+                });
+            }
+        };
+        $('.layui-btn.layuiadmin-btn-useradmin').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+        //编辑，删除，发布申请
+        //监听行工具事件
+        table.on('tool(LAY-items-manage)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'edit'){
+                parent.layer.open({
+                    type: 2,
+                    title: '编辑新闻内容',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['75%', '75%'],
+                    content: './home/iframe/news/newsEdit.html',
+                    success:function(layero,index){
+                        var news_id = $("#news_id", layero.find("iframe")[0].contentWindow.document);
+                        news_id.attr("value", data.id );
+                    },end:function(){
+                        location.reload();
+                    }
+                });
+            }else if(obj.event === "del"){
+                layer.confirm('确定删除?', function(index){
+                    $.ajax({
+                        url: domain + "article_del",
+                        data:{news_id:data.id},
+                        success:function(data){
+                            if(data.code == 200 ){
+                                layer.msg(data.msg, {icon: 1});
+                                window.setTimeout(function () {
+                                    window.location.reload();
+                                }, 500);
+                            }else{
+                                layer.msg(data.msg, {icon: 2});
+                            }
+                        },
+                        error: function(data){
+                            layer.msg('数据异常，操作失败！');
+                        },
+                    });
+                });
+            }
+        });
+    });
+    /**
+     * @param e 图片对象
+     */
+    function showBigImage(e) {
+        layer.open({
+            type: 1,
+            title: false,
+            closeBtn: 0,
+            shadeClose: true, //点击阴影关闭
+            area: [$(e).width + 'px', $(e).height + 'px'], //宽高
+            content: "<img src=" + $(e).attr('src') + " style='width:720px;height:405px' />"
+        });
+    }
+</script>
+</body>
+</html>
